@@ -8,6 +8,7 @@
 
 // TODO: you'll need to import a library here
 import UIKit
+import AVFoundation
 
 // TODO: you'll need to edit this line to make your class conform to the AVCapturePhotoCaptureDelegate protocol
 class ImagePickerViewController: UIViewController {
@@ -22,12 +23,25 @@ class ImagePickerViewController: UIViewController {
     var selectedImage = UIImage()
     
     // TODO: add your instance methods for photo taking here
+
+    // manages real time capture activity from input devices to create output media (photo/video)
+    let captureSession = AVCaptureSession()
+    
+    // the device we are capturing media from (i.e. front camera of an iPhone 7)
+    var captureDevice : AVCaptureDevice?
+    
+    // view that will let us preview what is being captured from the captureSession
+    var previewLayer : AVCaptureVideoPreviewLayer?
+    
+    // Object used to capture a single photo from our capture device
+    let photoOutput = AVCapturePhotoOutput()
     
     override func viewDidLoad() {
 
         super.viewDidLoad()
         
-        // TODO: call captureNewSession here
+        // TODO: call captureNefwSession here
+        captureNewSession(devicePostion: nil)
         
         toggleUI(isInPreviewMode: false)
     }
@@ -98,6 +112,61 @@ class ImagePickerViewController: UIViewController {
         view.bringSubview(toFront: flipCameraButton)
         view.bringSubview(toFront: cancelButton)
     }
+    
+    
+    
+    /// Creates a new capture session, and starts updating it using the user's
+    /// input device
+    ///
+    /// - Parameter devicePostion: location of user's camera - you'll need to figure out how to use this
+    func captureNewSession(devicePostion: AVCaptureDevicePosition?) {
+        
+        // specifies that we want high quality video captured from the device
+        captureSession.sessionPreset = AVCaptureSessionPresetHigh
+        
+        if let deviceDiscoverySession = AVCaptureDeviceDiscoverySession(deviceTypes: [AVCaptureDeviceType.builtInWideAngleCamera], mediaType: AVMediaTypeVideo, position: AVCaptureDevicePosition.unspecified) {
+            
+            // Iterate through available devices until we find one that works
+            for device in deviceDiscoverySession.devices {
+
+                // Only use device if it supports video
+                if (device.hasMediaType(AVMediaTypeVideo)) {
+                    if (device.position == AVCaptureDevicePosition.front) {
+                        
+                        captureDevice = device
+                        if captureDevice != nil {
+                            // Now we can begin capturing the session using the user's device!
+                            do {
+                                try captureSession.addInput(AVCaptureDeviceInput(device: captureDevice))
+                                
+                                if captureSession.canAddOutput(photoOutput) {
+                                    captureSession.addOutput(photoOutput)
+                                }
+                            }
+                            catch {
+                                print(error.localizedDescription)
+                            }
+                            
+                            if let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession) {
+                                
+                                view.layer.addSublayer(previewLayer)
+                                previewLayer.frame = view.layer.frame
+                                captureSession.startRunning()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
     
     @IBAction func cancelButtonWasPressed(_ sender: UIButton) {
         selectedImage = UIImage()
