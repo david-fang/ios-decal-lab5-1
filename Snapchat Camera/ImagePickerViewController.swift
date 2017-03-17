@@ -11,7 +11,7 @@ import UIKit
 import AVFoundation
 
 // TODO: you'll need to edit this line to make your class conform to the AVCapturePhotoCaptureDelegate protocol
-class ImagePickerViewController: UIViewController {
+class ImagePickerViewController: UIViewController, AVCapturePhotoCaptureDelegate {
 
     @IBOutlet weak var imageViewOverlay: UIImageView!
     @IBOutlet weak var flipCameraButton: UIButton!
@@ -37,12 +37,8 @@ class ImagePickerViewController: UIViewController {
     let photoOutput = AVCapturePhotoOutput()
     
     override func viewDidLoad() {
-
         super.viewDidLoad()
-        
-        // TODO: call captureNefwSession here
         captureNewSession(devicePostion: nil)
-        
         toggleUI(isInPreviewMode: false)
     }
     
@@ -63,13 +59,8 @@ class ImagePickerViewController: UIViewController {
     
     
     @IBAction func takePhoto(_ sender: UIButton) {
-        // TODO: Replace the following code as per instructions in the spec.
-        // Instead of sending a squirrel pic every time, here we will want
-        // to start the process of creating a photo from our photoOutput
-        if let squirrelImage = UIImage(named: "squirrel") {
-            selectedImage = squirrelImage
-            toggleUI(isInPreviewMode: true)
-        }
+        let photoSettings = AVCapturePhotoSettings()
+        photoOutput.capturePhoto(with: photoSettings, delegate: self)
     }
     
     
@@ -78,8 +69,19 @@ class ImagePickerViewController: UIViewController {
     ///
     /// - Parameter sender: The flip camera button in the top left of the view
     @IBAction func flipCamera(_ sender: UIButton) {
-        // TODO: allow user to switch between front and back camera
-        // you will need to create a new session using 'captureNewSession'
+//        for input in captureSession.inputs {
+//            if let input = input as? AVCaptureDeviceInput {
+//                captureSession.removeInput(input)
+//            }
+//        }
+//        
+//        captureSession.stopRunning()
+//
+//        if (captureDevice?.position == AVCaptureDevicePosition.front) {
+//            captureNewSession(devicePostion: AVCaptureDevicePosition.back)
+//        } else {
+//            captureNewSession(devicePostion: AVCaptureDevicePosition.front)
+//        }
     }
 
     
@@ -161,13 +163,26 @@ class ImagePickerViewController: UIViewController {
     }
     
     
-    
-    
-    
-    
-    
-    
-    
+    /// Provides the delegate a captured image in a processed format (such as JPEG).
+    func capture(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingPhotoSampleBuffer photoSampleBuffer: CMSampleBuffer?, previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Error?) {
+        
+        if let photoSampleBuffer = photoSampleBuffer {
+            let photoData = AVCapturePhotoOutput.jpegPhotoDataRepresentation(forJPEGSampleBuffer: photoSampleBuffer, previewPhotoSampleBuffer: previewPhotoSampleBuffer)
+            
+            // Then use this data to create a UIImage, and set it equal to `selectedImage`
+            
+            if let data = photoData {
+                if let img = UIImage(data: data) {
+                    selectedImage = img
+                    
+                    // This method updates the UI so the send button appears (no need to edit it)
+                    toggleUI(isInPreviewMode: true)
+
+                }
+            }
+        }
+    }
+
     @IBAction func cancelButtonWasPressed(_ sender: UIButton) {
         selectedImage = UIImage()
         toggleUI(isInPreviewMode: false)
